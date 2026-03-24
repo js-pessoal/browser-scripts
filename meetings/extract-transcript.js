@@ -1,7 +1,7 @@
 // Nome: extract-transcript.js
 // Descrição: Extrai falas, speakers e timestamps de páginas de transcrição
 // Uso: Cole no console do navegador na página da transcrição
-// Compatível com: Fireflies TODO: testar Fathom
+// Compatível com: Fireflies
 
 (function () {
   try {
@@ -12,36 +12,45 @@
       return;
     }
 
-    const result = [];
+    const lines = [];
 
-    paragraphs.forEach((p) => {
-      const speaker = p.querySelector('.name')?.textContent?.trim() || 'Unknown';
+    paragraphs.forEach(function (p) {
+      const nameEl = p.querySelector('.name');
+      const speaker = nameEl ? nameEl.textContent.trim() : 'Unknown';
 
-      const timeEl =
-        p.querySelector('.timestamp, time') ??
-        Array.from(p.querySelectorAll('span'))
-          .find(el => /^\d{2}:\d{2}$/.test(el.textContent.trim()));
-      const time = timeEl?.textContent?.trim() || '';
+      const timeEl = Array.from(p.querySelectorAll('span')).find(function (el) {
+        return /^\d{2}:\d{2}(:\d{2})?$/.test(el.textContent.trim());
+      });
+      const time = timeEl ? timeEl.textContent.trim() : '';
 
-      const sentences = p.querySelectorAll('[id$="transcript-sentence"]');
-      const text = Array.from(sentences)
-        .map(s => s.textContent.trim())
-        .filter(Boolean)
+      const sentences = Array.from(p.querySelectorAll('[id$="-transcript-sentence"]'));
+      const text = sentences
+        .map(function (s) {
+          // Normaliza quebras de linha e espaços extras dentro de cada sentença
+          return s.textContent.replace(/\s+/g, ' ').trim();
+        })
+        .filter(function (s) { return s.length > 0; })
         .join(' ');
 
       if (text) {
-        result.push({ speaker, time, text });
+        lines.push('[' + time + '] ' + speaker + ': ' + text);
       } else {
-        console.warn(`Parágrafo sem texto: ${p.id}`);
+        console.warn('Parágrafo sem texto: ' + p.id);
       }
     });
 
-    const formatted = result
-      .map(r => `[${r.time}] ${r.speaker}: ${r.text}`)
-      .join('\n');
+    const formatted = lines.join('\n');
 
-    copy(formatted);
-    console.log(`✅ ${result.length} falas copiadas para o clipboard.`);
+    const textarea = document.createElement('textarea');
+    textarea.value = formatted;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    console.log('\u2705 ' + lines.length + ' falas copiadas para o clipboard.');
     return formatted;
 
   } catch (e) {
