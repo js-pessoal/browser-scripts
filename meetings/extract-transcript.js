@@ -26,7 +26,6 @@
       const sentences = Array.from(p.querySelectorAll('[id$="-transcript-sentence"]'));
       const text = sentences
         .map(function (s) {
-          // Normaliza quebras de linha e espaços extras dentro de cada sentença
           return s.textContent.replace(/\s+/g, ' ').trim();
         })
         .filter(function (s) { return s.length > 0; })
@@ -39,10 +38,8 @@
       }
     });
 
-    const formatted = lines.join('\n');
-
     const textarea = document.createElement('textarea');
-    textarea.value = formatted;
+    textarea.value = lines.join('\n');
     textarea.style.position = 'fixed';
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
@@ -51,7 +48,6 @@
     document.body.removeChild(textarea);
 
     console.log('\u2705 ' + lines.length + ' falas copiadas para o clipboard.');
-    return formatted;
 
   } catch (e) {
     console.error('Falha ao extrair transcrição:', e);
